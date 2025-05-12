@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Salata Yapma Oyunu</title>
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        body {
+            background: #f0fff4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 15px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        nav {
+            margin-bottom: 30px;
+        }
+        nav a {
+            color: #4caf50;
+            font-weight: 600;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        main {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px 30px;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #388e3c;
+            margin-bottom: 15px;
+        }
+        #scoreboard {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #2e7d32;
+            font-weight: 700;
+        }
+        #timer {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: #558b2f;
+        }
+        #game-area {
+            position: relative;
+            height: 300px;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #e8f5e9;
+        }
+        .word {
+            position: absolute;
+            background: #81c784;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: background 0.3s ease;
+        }
+        .word:hover {
+            background: #4caf50;
+        }
+        #start-btn {
+            margin-top: 25px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #start-btn:hover {
+            background: #388e3c;
+        }
+        #result-message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+   <header>
+        <h1>Salata Yapma Oyunu</h1>
+       <nav>
+    <a href="../index.html">Anasayfa</a>
+    <a href="tariflerimiz.html">Tariflerimiz</a>
+    <a href="vegan-salatalar.html">Vegan Salatalar</a>
+    <a href="proteinli-salatalar.html">Proteinli Salatalar</a>
+    <a href="sebzeli-salatalar.html">Sebzeli Salatalar</a>
+    <a href="meyveli-salatalar.html">Meyveli Salatalar</a>
+    <a href="tarif-gonder.html">Tarif Gönder</a>
+    <a href="ipucu.html">İpucu</a>
+    <a href="oyun.html">Oyun</a>
+    <a href="blog.html">Blog</a>
+      </nav>
+
+    </header>
+    <main>
+        <div id="scoreboard">Puan: 0</div>
+        <div id="timer">Kalan Süre: 50 saniye</div>
+        <div id="game-area"></div>
+        <button id="start-btn">Oyunu Başlat</button>
+        <div id="result-message"></div>
+    </main>
+
+    <script>
+        (() => {
+            const gameArea = document.getElementById('game-area');
+            const scoreboard = document.getElementById('scoreboard');
+            const timerDisplay = document.getElementById('timer');
+            const startBtn = document.getElementById('start-btn');
+            const resultMessage = document.getElementById('result-message');
+
+            // Salata malzemeleri (doğru kelimeler)
+            const saladIngredients = [
+                'Domates', 'Salatalık', 'Marul', 'Roka', 'Maydanoz',
+                'Avokado', 'Kırmızı Soğan', 'Zeytin', 'Biber',
+                'Limon', 'Zeytinyağı', 'Havuç', 'Kabak', 'Nane',
+                'Fesleğen', 'Kereviz', 'Kinoa', 'Peynir', 'Ceviz',
+                'Hardal', 'Tuz', 'Karabiber'
+            ];
+
+            // Yanlış kelimeler (karışıklık için)
+            const wrongWords = [
+                'Muz', 'Çikolata', 'Ekmek', 'Çay', 'Kahve',
+                'Makarna', 'Et', 'Balık', 'Patates', 'Süt',
+                'Şeker', 'Tavuk', 'Kek', 'Pirinç', 'Yoğurt'
+            ];
+
+            let score = 0;
+            let timeLeft = 50;
+            let gameInterval;
+            let wordInterval;
+            let isGameRunning = false;
+
+            // Rastgele sayı üret
+            function randomInt(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            // Kelime oluştur ve oyun alanına yerleştir
+            function createWord() {
+                if (!isGameRunning) return;
+
+                const isCorrect = Math.random() < 0.6; // %60 doğru kelime, %40 yanlış
+                const wordText = isCorrect
+                    ? saladIngredients[randomInt(0, saladIngredients.length -1)]
+                    : wrongWords[randomInt(0, wrongWords.length -1)];
+
+                const wordElem = document.createElement('div');
+                wordElem.classList.add('word');
+                wordElem.textContent = wordText;
+
+                // Rastgele pozisyon (gameArea içinde)
+                const maxX = gameArea.clientWidth - 100;
+                const maxY = gameArea.clientHeight - 40;
+                const posX = randomInt(0, maxX);
+                const posY = randomInt(0, maxY);
+
+                wordElem.style.left = posX + 'px';
+                wordElem.style.top = posY + 'px';
+
+                // Tıklama olayını ekle
+                wordElem.addEventListener('click', () => {
+                    if (!isGameRunning) return;
+
+                    if (isCorrect) {
+                        score += 10;
+                        scoreboard.textContent = `Puan: ${score}`;
+                        // Görsel efekt için kısa renk değişimi
+                        wordElem.style.backgroundColor = '#2e7d32';
+                        setTimeout(() => {
+                            if (wordElem.parentNode) wordElem.parentNode.removeChild(wordElem);
+                        }, 300);
+                    } else {
+                        score -= 5;
+                        if(score < 0) score = 0;
+                        scoreboard.textContent = `Puan: ${score}`;
+                        // Kırmızı uyarı efekti
+                        wordElem.style.backgroundColor = '#d32f2f';
+                        setTimeout(() => {
+                            if (wordElem.parentNode) wordElem.parentNode.removeChild(wordElem);
+                        }, 300);
+                    }
+                });
+
+                gameArea.appendChild(wordElem);
+
+                // Kelimeyi 4 saniye sonra kaldır
+                setTimeout(() => {
+                    if (wordElem.parentNode) {
+                        wordElem.parentNode.removeChild(wordElem);
+                    }
+                }, 4000);
+            }
+
+            // Zamanlayıcı fonksiyonu
+            function startTimer() {
+                timeLeft = 50;
+                timerDisplay.textContent = `Kalan Süre: ${timeLeft} saniye`;
+
+                gameInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = `Kalan Süre: ${timeLeft} saniye`;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(gameInterval);
+                        clearInterval(wordInterval);
+                        isGameRunning = false;
+                        startBtn.disabled = false;
+                        startBtn.textContent = 'Tekrar Oyna';
+                        resultMessage.textContent = `Oyun bitti! Toplam puanın: ${score}`;
+                        // Oyun alanını temizle
+                        gameArea.innerHTML = '';
+                    }
+                }, 1000);
+            }
+
+            // Oyunu başlat
+            function startGame() {
+                if (isGameRunning) return;
+
+                score = 0;
+                scoreboard.textContent = `Puan: ${score}`;
+                resultMessage.textContent = '';
+                gameArea.innerHTML = '';
+                startBtn.disabled = true;
+                startBtn.textContent = 'Oyun Devam Ediyor...';
+                isGameRunning = true;
+
+                startTimer();
+
+                // Her 800ms'de yeni kelime çıkart
+                wordInterval = setInterval(createWord, 800);
+            }
+
+            startBtn.addEventListener('click', startGame);
+        })();
+    </script>
+</body>
+</html>
